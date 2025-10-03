@@ -1,0 +1,1010 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="stylesheet" href="css/leaflet.css">
+    <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+    <link rel="stylesheet" href="css/qgis2web.css">
+    <link rel="stylesheet" href="css/fontawesome-all.min.css">
+    <link rel="stylesheet" href="css/filter.css">
+    <link rel="stylesheet" href="css/nouislider.min.css">
+    <link rel="stylesheet" href="css/leaflet.photon.css">
+    <style>
+        /* Estilos generales del mapa y cuerpo */
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* ------------------------------------------- */
+        /* --- ESTILOS DEL MODAL DE AVISO (SERIO Y CENTRADO) --- */
+        /* ------------------------------------------- */
+        #disclaimerModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(22, 42, 60, 0.6);
+            z-index: 10000;
+            display: block;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            opacity: 1;
+            transition: opacity 0.5s ease-out;
+        }
+
+        #modalContent {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #ffffff;
+            color: #2c3e50;
+            padding: 4vmin;
+            border-radius: 12px;
+            max-width: 90%;
+            width: 480px;
+            text-align: center;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4);
+            border-top: 5px solid #34495e;
+        }
+
+        #modalContent h2 {
+            font-size: 2.5vmin;
+            min-font-size: 18px;
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #34495e;
+            font-weight: 700;
+        }
+        
+        @media (max-width: 600px) {
+            #modalContent h2 { font-size: 5vw; }
+        }
+
+        #modalContent p {
+            font-size: 1.8vmin;
+            min-font-size: 13px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            color: #555;
+        }
+        
+        @media (max-width: 600px) {
+            #modalContent p { font-size: 3.5vw; }
+        }
+
+        #acceptDisclaimer {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: background-color 0.2s, transform 0.2s;
+            text-transform: uppercase;
+        }
+
+        #acceptDisclaimer:hover {
+            background-color: #2980b9;
+            transform: translateY(-1px);
+        }
+
+        /* Paneles de texto y filtro - MEJORADOS PARA RESPONSIVIDAD */
+        #texto, #filterPanel {
+            background-color: #ffffff;
+            border: 1px solid #ccc;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            padding: 15px;
+            z-index: 9999;
+            transition: all 0.5s ease-out;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        /* Botón de cierre para el panel de texto */
+        #cerrarTexto {
+            position: absolute;
+            top: 8px;
+            right: 12px;
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: #777;
+        }
+        
+        #cerrarTexto:hover {
+            color: #333;
+        }
+
+        .hidden {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        .logo-container {
+            margin-bottom: 0.5rem;
+        }
+        #logo {
+            width: 60%;
+            max-width: 80px;
+            height: auto;
+        }
+
+        /* Estilos del popup - Más compactos */
+        .popup-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: "Segoe UI", sans-serif;
+            font-size: 12px;
+            color: #333;
+        }
+
+        .popup-table th {
+            text-align: left;
+            font-weight: 600;
+            padding: 4px 6px;
+            background-color: #f0f4f8;
+            color: #0078D7;
+            border-bottom: 1px solid #ddd;
+            width: 40%;
+        }
+
+        .popup-table td {
+            padding: 4px 6px;
+            border-bottom: 1px solid #eee;
+            word-break: break-word;
+        }
+
+        /* Estilo para la simbología (control de capas) */
+        .leaflet-control-layers.leaflet-control {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 8px 12px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 13px;
+            color: #333;
+            max-width: 300px;
+        }
+
+        .leaflet-control-layers-overlays label {
+            display: flex;
+            align-items: center;
+            margin-bottom: 4px;
+            padding: 4px 0;
+            white-space: nowrap;
+        }
+
+        .leaflet-control-layers-overlays label span {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Estilos para las tablas dentro de la leyenda */
+        .leaflet-control-layers table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 5px;
+        }
+        
+        .leaflet-control-layers table td {
+            padding: 2px 0;
+            font-size: 12px;
+            vertical-align: middle;
+            border: none;
+            white-space: nowrap;
+        }
+        
+        .leaflet-control-layers table td img {
+            width: 16px;
+            height: 16px;
+            margin-right: 5px;
+            vertical-align: middle;
+        }
+
+        .leaflet-control-layers-tree .leaflet-layerstree-header {
+            font-weight: bold;
+            color: #0056b3;
+            margin-top: 5px;
+            padding-bottom: 3px;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        /* Estilos para el panel de filtro flotante */
+        #filterPanel {
+            position: fixed;
+            z-index: 999;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 14px;
+            transition: all 0.3s ease-out;
+            bottom: 10px;
+            left: 10px;
+            right: auto;
+            top: auto;
+            width: auto;
+        }
+
+        #filterPanel.collapsed .filter-content {
+            max-height: 0;
+            padding: 0 15px;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+        }
+
+        #filterPanel.expanded .filter-content {
+            max-height: 300px;
+            padding: 15px;
+            overflow: auto;
+            transition: max-height 0.3s ease-in, padding 0.3s ease-in;
+        }
+
+        .filter-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background-color: #f8f8f8;
+            border-bottom: 1px solid #eee;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #0078D7;
+        }
+
+        .filter-header button {
+            background: none;
+            border: none;
+            font-size: 1.2em;
+            cursor: pointer;
+            color: #777;
+        }
+
+        .filter-header button:hover {
+            color: #333;
+        }
+
+        /* Estilos específicos para el select del filtro */
+        .filterselect select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        .filterlabel {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #555;
+            text-align: left;
+        }
+
+        .filterlabel.clear-filter {
+            cursor: pointer;
+            color: #0078D7;
+            text-decoration: underline;
+            margin-top: 5px;
+            display: block;
+            text-align: center;
+        }
+
+        .filterlabel.clear-filter:hover {
+            color: #0056b3;
+        }
+
+        /* Botón de simbología para móviles */
+        #legendButton {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            padding: 10px;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 50%;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            cursor: pointer;
+            display: none;
+        }
+        #legendButton i {
+            font-size: 20px;
+            color: #555;
+        }
+        
+        /* Ajustes de posición para móvil */
+        @media (max-width: 767px) {
+            #texto {
+                position: fixed;
+                bottom: 10px;
+                right: 10px;
+                left: 10px;
+                width: auto;
+                margin: 0;
+            }
+            #filterPanel {
+                position: fixed;
+                bottom: 150px;
+                right: 10px;
+                left: 10px;
+                width: auto;
+                margin: 0;
+            }
+            #legendButton {
+                display: block;
+            }
+            .leaflet-control-layers.leaflet-control {
+                position: fixed;
+                top: 60px;
+                right: 10px;
+                left: auto;
+                bottom: auto;
+                max-width: 280px;
+                display: none;
+            }
+            .leaflet-control-layers.leaflet-control.expanded {
+                display: block;
+            }
+        }
+        
+        /* Ajustes de posición para escritorio */
+        @media (min-width: 768px) {
+            #texto {
+                position: fixed;
+                bottom: 10px;
+                left: 10px;
+                right: auto;
+                width: 25%;
+            }
+            #filterPanel {
+                position: fixed;
+                bottom: 10px;
+                right: 10px;
+                left: auto;
+                width: 280px;
+            }
+            #legendButton {
+                display: none;
+            }
+        }
+
+        /* Estilos para símbolos personalizados */
+        .legend-symbol {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            margin-right: 8px;
+            border-radius: 3px;
+            vertical-align: middle;
+        }
+        .legend-circle {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            margin-right: 8px;
+            border-radius: 50%;
+            vertical-align: middle;
+            border: 2px solid;
+        }
+    </style>
+    <title>Mapa de Iniciativas - SECPLAN Coquimbo</title>
+</head>
+<body>
+    <!-- MODAL DE AVISO -->
+    <div id="disclaimerModal" style="display: block;">
+        <div id="modalContent">
+            <h2>⚠️ Aviso de Uso de Datos Referenciales</h2>
+            <p>La información contenida en este mapa es de **carácter referencial y preliminar**. Los datos se presentan para fines ilustrativos y pueden no reflejar la situación oficial o más reciente.</p>
+            <p><strong>Se requiere validación oficial para cualquier toma de decisión o uso legal de la información.</strong></p>
+            <button id="acceptDisclaimer">Entendido y Aceptar</button>
+        </div>
+    </div>
+    
+    <div id="map">
+        <button id="legendButton" title="Mostrar/Ocultar simbología">
+            <i class="fas fa-layer-group"></i>
+        </button>
+        <div id="texto">
+            <button id="cerrarTexto">✕</button>
+            <div class="logo-container">
+                <a href="http://mapas.municoquimbo.cl/" target="_blank">
+                    <img id="logo" src="images/logo.png" alt="Logo Municipalidad de Coquimbo">
+                </a>
+            </div>
+            <strong>
+                <br>
+                <span style="font-size: 18px; color: #2c3e50;">Iniciativas Futuras SECPLAN</span><br>
+                <span style="color: #0078D7;">Ilustre Municipalidad de Coquimbo</span><br><br>
+            </strong>
+        </div>
+
+        <div id="filterPanel" class="collapsed">
+            <div class="filter-header" id="filterHeader">
+                <span>Filtrar por Estado</span>
+                <button id="toggleFilter">▼</button>
+            </div>
+            <div class="filter-content">
+                <div id="div_ESTADO" class="filterselect">
+                    <div class="filterlabel">ESTADO</div>
+                    <select multiple="" size="4" id="sel_ESTADO" onchange="filterFunc()">
+                        <option value="" unselected=""></option>
+                        <option value="APERTURADAS Y EN EVALUACION">APERTURADAS Y EN EVALUACION</option>
+                        <option value="EN LICITACION A LA FECHA">EN LICITACION A LA FECHA</option>
+                        <option value="EVALUADAS PARA ADJUDICAR">EVALUADAS PARA ADJUDICAR</option>
+                        <option value="INICIATIVA ACTUAL">INICIATIVA ACTUAL</option>
+                    </select>
+                    <div class="filterlabel clear-filter" onclick="
+                        var options = document.getElementById(&quot;sel_ESTADO&quot;).options;
+                        for (var i=0; i < options.length; i++) {
+                            options[i].selected = false;
+                        }
+                        filterFunc();
+                    ">Limpiar filtro</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/qgis2web_expressions.js"></script>
+    <script src="js/leaflet.js"></script>
+    <script src="js/L.Control.Layers.Tree.min.js"></script>
+    <script src="js/leaflet.rotatedMarker.js"></script>
+    <script src="js/leaflet.pattern.js"></script>
+    <script src="js/leaflet-hash.js"></script>
+    <script src="js/Autolinker.min.js"></script>
+    <script src="js/rbush.min.js"></script>
+    <script src="js/labelgun.min.js"></script>
+    <script src="js/labels.js"></script>
+    <script src="js/leaflet.photon.js"></script>
+    <script src="js/tailDT.js"></script>
+    <script src="js/nouislider.min.js"></script>
+    <script src="js/wNumb.js"></script>
+    
+    <script src="data/SECTORESESTADISTICAS_2.js"></script>
+    <script src="data/PROGRAMACIONLICITACIONES_3.js"></script>
+    <script src="data/INICIATIVASFUTURAS_4.js"></script>
+    
+    <script>
+        // =========================================================
+        // === GESTIÓN DEL MODAL DE AVISO (DISCLAIMER) - PRIMERO ===
+        // =========================================================
+        document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('disclaimerModal');
+            modal.style.display = 'block';
+            modal.style.opacity = 1;
+
+            document.getElementById('acceptDisclaimer').addEventListener('click', function() {
+                modal.style.opacity = 0;
+
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                    initializeMap();
+                }, 500);
+            });
+        });
+
+        // Variables globales
+        var map;
+        var autolinker;
+        var activeIniciativasLayers = []; // Array para guardar las capas activas de iniciativas
+
+        // Función principal de inicialización del mapa
+        function initializeMap() {
+            if (map) return;
+
+            // Inicialización del mapa
+            map = L.map('map', {
+                zoomControl: false, 
+                maxZoom: 28, 
+                minZoom: 1
+            }).fitBounds([[-30.03400879001387, -71.41049402904866], [-29.93440745539181, -71.2275455587961]]);
+            
+            var hash = new L.Hash(map);
+            map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+            autolinker = new Autolinker({ truncate: { length: 30, location: 'smart' } });
+
+            // Agregar control de zoom personalizado
+            L.control.zoom({
+                position: 'topleft'
+            }).addTo(map);
+
+            // Funciones auxiliares para popups
+            function removeEmptyRowsFromPopupContent(content, feature) {
+                var tempDiv = document.createElement('div');
+                tempDiv.innerHTML = content;
+                var rows = tempDiv.querySelectorAll('tr');
+                for (var i = 0; i < rows.length; i++) {
+                    var td = rows[i].querySelector('td.visible-with-data');
+                    var key = td ? td.id : '';
+                    if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                        rows[i].parentNode.removeChild(rows[i]);
+                    }
+                }
+                return tempDiv.innerHTML;
+            }
+
+            function addClassToPopupIfMedia(content, popup) {
+                var tempDiv = document.createElement('div');
+                tempDiv.innerHTML = content;
+                if (tempDiv.querySelector('td img')) {
+                    popup._contentNode.classList.add('media');
+                    setTimeout(function() {
+                        popup.update();
+                    }, 10);
+                } else {
+                    popup._contentNode.classList.remove('media');
+                }
+            }
+
+            var bounds_group = new L.featureGroup([]);
+            
+            // =========================================================
+            // === CAPAS BASE MEJORADAS ===
+            // =========================================================
+            
+            map.createPane('pane_GoogleSatelite_0');
+            map.getPane('pane_GoogleSatelite_0').style.zIndex = 400;
+            var layer_GoogleSatelite_0 = L.tileLayer('http://www.google.cn/maps/vt?lyrs=s@189&gl=cn&x={x}&y={y}&z={z}', {
+                pane: 'pane_GoogleSatelite_0',
+                opacity: 1.0,
+                attribution: '',
+                minZoom: 1,
+                maxZoom: 28,
+                minNativeZoom: 0,
+                maxNativeZoom: 18
+            });
+
+            map.createPane('pane_OpenStreetMap_1');
+            map.getPane('pane_OpenStreetMap_1').style.zIndex = 401;
+            var layer_OpenStreetMap_1 = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                pane: 'pane_OpenStreetMap_1',
+                opacity: 1.0,
+                attribution: '',
+                minZoom: 1,
+                maxZoom: 28,
+                minNativeZoom: 0,
+                maxNativeZoom: 19
+            });
+            
+            // =========================================================
+            // === CAPA SECTORES ESTADÍSTICAS - REPRESENTACIÓN MEJORADA ===
+            // =========================================================
+            function pop_SECTORESESTADISTICAS_2(feature, layer) {
+                var popupContent = '<table class="popup-table">\
+                    <tr>\
+                        <th scope="row">Zona</th>\
+                        <td>' + (feature.properties['Zona'] !== null ? autolinker.link(String(feature.properties['Zona']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+                var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+                layer.on('popupopen', function(e) {
+                    addClassToPopupIfMedia(content, e.popup);
+                });
+                layer.bindPopup(content, { maxHeight: 400 });
+            }
+
+            // Paleta de colores mejorada para sectores
+            const sectorColors = {
+                'CANTERA BAJA': '#FF6B6B',
+                'GUANAQUEROS': '#4ECDC4',
+                'LA HERRADURA': '#45B7D1',
+                'PARTE ALTA': '#96CEB4',
+                'PEÑUELAS': '#FFEAA7',
+                'RINCONADA': '#DDA0DD',
+                'RURAL': '#98D8C8',
+                'SAN JUAN': '#F7DC6F',
+                'SINDEMPART': '#BB8FCE',
+                'TIERRAS BLANCAS': '#85C1E9',
+                'TONGOY': '#F8C471'
+            };
+
+            function style_SECTORESESTADISTICAS_2_0(feature) {
+                const zona = String(feature.properties['Zona']);
+                const color = sectorColors[zona] || '#CCCCCC';
+                
+                return {
+                    pane: 'pane_SECTORESESTADISTICAS_2',
+                    opacity: 1,
+                    color: '#2c3e50',
+                    dashArray: '',
+                    lineCap: 'butt',
+                    lineJoin: 'miter',
+                    weight: 2.0,
+                    fill: true,
+                    fillOpacity: 0.3,
+                    fillColor: color,
+                    interactive: true,
+                }
+            }
+
+            map.createPane('pane_SECTORESESTADISTICAS_2');
+            map.getPane('pane_SECTORESESTADISTICAS_2').style.zIndex = 402;
+            map.getPane('pane_SECTORESESTADISTICAS_2').style['mix-blend-mode'] = 'normal';
+            var layer_SECTORESESTADISTICAS_2 = new L.geoJson(json_SECTORESESTADISTICAS_2, {
+                attribution: '',
+                interactive: true,
+                dataVar: 'json_SECTORESESTADISTICAS_2',
+                layerName: 'layer_SECTORESESTADISTICAS_2',
+                pane: 'pane_SECTORESESTADISTICAS_2',
+                onEachFeature: pop_SECTORESESTADISTICAS_2,
+                style: style_SECTORESESTADISTICAS_2_0,
+            });
+            bounds_group.addLayer(layer_SECTORESESTADISTICAS_2);
+            
+            // =========================================================
+            // === CAPA PROGRAMACIÓN LICITACIONES - REPRESENTACIÓN MEJORADA ===
+            // =========================================================
+            function pop_PROGRAMACIONLICITACIONES_3(feature, layer) {
+                var popupContent = '<table class="popup-table">\
+                    <tr>\
+                        <th scope="row">ID</th>\
+                        <td>' + (feature.properties['ID'] !== null ? autolinker.link(String(feature.properties['ID']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">LICITACIÓN</th>\
+                        <td>' + (feature.properties['LICITACION'] !== null ? autolinker.link(String(feature.properties['LICITACION']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">NOMBRE</th>\
+                        <td>' + (feature.properties['NOMBRE'] !== null ? autolinker.link(String(feature.properties['NOMBRE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+                var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+                layer.on('popupopen', function(e) {
+                    addClassToPopupIfMedia(content, e.popup);
+                });
+                layer.bindPopup(content, { maxHeight: 400 });
+            }
+
+            function style_PROGRAMACIONLICITACIONES_3_0() {
+                return {
+                    pane: 'pane_PROGRAMACIONLICITACIONES_3',
+                    radius: 8.0,
+                    opacity: 1,
+                    color: '#E74C3C',
+                    dashArray: '',
+                    lineCap: 'butt',
+                    lineJoin: 'miter',
+                    weight: 2,
+                    fill: true,
+                    fillOpacity: 0.8,
+                    fillColor: '#E74C3C',
+                    interactive: true,
+                }
+            }
+
+            map.createPane('pane_PROGRAMACIONLICITACIONES_3');
+            map.getPane('pane_PROGRAMACIONLICITACIONES_3').style.zIndex = 403;
+            map.getPane('pane_PROGRAMACIONLICITACIONES_3').style['mix-blend-mode'] = 'normal';
+            var layer_PROGRAMACIONLICITACIONES_3 = new L.geoJson(json_PROGRAMACIONLICITACIONES_3, {
+                attribution: '',
+                interactive: true,
+                dataVar: 'json_PROGRAMACIONLICITACIONES_3',
+                layerName: 'layer_PROGRAMACIONLICITACIONES_3',
+                pane: 'pane_PROGRAMACIONLICITACIONES_3',
+                onEachFeature: pop_PROGRAMACIONLICITACIONES_3,
+                pointToLayer: function (feature, latlng) {
+                    var context = {
+                        feature: feature,
+                        variables: {}
+                    };
+                    return L.circleMarker(latlng, style_PROGRAMACIONLICITACIONES_3_0(feature));
+                },
+            });
+            bounds_group.addLayer(layer_PROGRAMACIONLICITACIONES_3);
+            
+            // =========================================================
+            // === CAPA INICIATIVAS FUTURAS - REPRESENTACIÓN MEJORADA ===
+            // =========================================================
+            function pop_INICIATIVASFUTURAS_4(feature, layer) {
+                var popupContent = '<table class="popup-table">\
+                    <tr>\
+                        <th scope="row">INICIATIVA</th>\
+                        <td>' + (feature.properties['INICIATIVA'] !== null ? autolinker.link(String(feature.properties['INICIATIVA']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">LICITACIÓN</th>\
+                        <td>' + (feature.properties['LICITACION'] !== null ? autolinker.link(String(feature.properties['LICITACION']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">ESTADO</th>\
+                        <td>' + (feature.properties['ESTADO'] !== null ? autolinker.link(String(feature.properties['ESTADO']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">NOMBRE</th>\
+                        <td>' + (feature.properties['NOMBRE'] !== null ? autolinker.link(String(feature.properties['NOMBRE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+                var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+                layer.on('popupopen', function(e) {
+                    addClassToPopupIfMedia(content, e.popup);
+                });
+                layer.bindPopup(content, { maxHeight: 400 });
+            }
+
+            function style_INICIATIVASFUTURAS_4_0(feature) {
+                // Diferentes colores según el estado
+                const estado = feature.properties['ESTADO'];
+                let color, fillColor;
+                
+                switch(estado) {
+                    case 'APERTURADAS Y EN EVALUACION':
+                        color = '#3498DB';
+                        fillColor = '#3498DB';
+                        break;
+                    case 'EN LICITACION A LA FECHA':
+                        color = '#F39C12';
+                        fillColor = '#F39C12';
+                        break;
+                    case 'EVALUADAS PARA ADJUDICAR':
+                        color = '#27AE60';
+                        fillColor = '#27AE60';
+                        break;
+                    case 'INICIATIVA ACTUAL':
+                        color = '#9B59B6';
+                        fillColor = '#9B59B6';
+                        break;
+                    default:
+                        color = '#95A5A6';
+                        fillColor = '#95A5A6';
+                }
+                
+                return {
+                    pane: 'pane_INICIATIVASFUTURAS_4',
+                    radius: 6.0,
+                    opacity: 1,
+                    color: color,
+                    dashArray: '',
+                    lineCap: 'butt',
+                    lineJoin: 'miter',
+                    weight: 2,
+                    fill: true,
+                    fillOpacity: 0.7,
+                    fillColor: fillColor,
+                    interactive: true,
+                }
+            }
+
+            map.createPane('pane_INICIATIVASFUTURAS_4');
+            map.getPane('pane_INICIATIVASFUTURAS_4').style.zIndex = 404;
+            map.getPane('pane_INICIATIVASFUTURAS_4').style['mix-blend-mode'] = 'normal';
+            
+            // =========================================================
+            // === CREAR CAPAS FILTRADAS PARA INICIATIVAS ===
+            // =========================================================
+            
+            // Función para crear capas filtradas por estado
+            function createFilteredLayer(estado, color) {
+                var filteredData = json_INICIATIVASFUTURAS_4.features.filter(function(feature) {
+                    return feature.properties.ESTADO === estado;
+                });
+                
+                var layer = new L.geoJson(filteredData, {
+                    pane: 'pane_INICIATIVASFUTURAS_4',
+                    onEachFeature: pop_INICIATIVASFUTURAS_4,
+                    pointToLayer: function (feature, latlng) {
+                        return L.circleMarker(latlng, {
+                            pane: 'pane_INICIATIVASFUTURAS_4',
+                            radius: 6.0,
+                            opacity: 1,
+                            color: color,
+                            weight: 2,
+                            fill: true,
+                            fillOpacity: 0.7,
+                            fillColor: color,
+                            interactive: true,
+                        });
+                    },
+                });
+                
+                bounds_group.addLayer(layer);
+                return layer;
+            }
+
+            // Crear capas individuales para cada estado
+            var layer_INICIATIVAS_APERTURADAS = createFilteredLayer('APERTURADAS Y EN EVALUACION', '#3498DB');
+            var layer_INICIATIVAS_LICITACION = createFilteredLayer('EN LICITACION A LA FECHA', '#F39C12');
+            var layer_INICIATIVAS_EVALUADAS = createFilteredLayer('EVALUADAS PARA ADJUDICAR', '#27AE60');
+            var layer_INICIATIVAS_ACTUAL = createFilteredLayer('INICIATIVA ACTUAL', '#9B59B6');
+
+            // Guardar referencias para el filtro
+            activeIniciativasLayers = [
+                layer_INICIATIVAS_APERTURADAS,
+                layer_INICIATIVAS_LICITACION, 
+                layer_INICIATIVAS_EVALUADAS,
+                layer_INICIATIVAS_ACTUAL
+            ];
+
+            // =========================================================
+            // === CONTROL DE CAPAS MEJORADO ===
+            // =========================================================
+            
+            // Función para crear símbolos de leyenda
+            function createCircleSymbol(color, borderColor = '#2c3e50') {
+                return `<div class="legend-circle" style="background-color: ${color}; border-color: ${borderColor};"></div>`;
+            }
+
+            var overlaysTree = [
+                {
+                    label: '<b>📋 Iniciativas por Estado</b>',
+                    selectAllCheckbox: true,
+                    children: [
+                        {
+                            label: createCircleSymbol('#3498DB') + 'Aperturadas y en evaluación',
+                            layer: layer_INICIATIVAS_APERTURADAS,
+                            checked: true // INICIAR ACTIVAS
+                        },
+                        {
+                            label: createCircleSymbol('#F39C12') + 'En licitación',
+                            layer: layer_INICIATIVAS_LICITACION,
+                            checked: true // INICIAR ACTIVAS
+                        },
+                        {
+                            label: createCircleSymbol('#27AE60') + 'Evaluadas para adjudicar',
+                            layer: layer_INICIATIVAS_EVALUADAS,
+                            checked: true // INICIAR ACTIVAS
+                        },
+                        {
+                            label: createCircleSymbol('#9B59B6') + 'Iniciativa actual',
+                            layer: layer_INICIATIVAS_ACTUAL,
+                            checked: true // INICIAR ACTIVAS
+                        }
+                    ]
+                },
+                {
+                    label: '<b>📊 Otras Capas</b>',
+                    children: [
+                        {
+                            label: createCircleSymbol('#E74C3C', '#E74C3C') + 'Programación licitaciones',
+                            layer: layer_PROGRAMACIONLICITACIONES_3,
+                            checked: false
+                        },
+                        {
+                            label: '🗺️ Sectores estadísticos',
+                            layer: layer_SECTORESESTADISTICAS_2,
+                            checked: true
+                        }
+                    ]
+                },
+                {
+                    label: '<b>🗺️ Capas Base</b>',
+                    children: [
+                        {label: "🌍 OpenStreetMap", layer: layer_OpenStreetMap_1, checked: true},
+                        {label: "🛰️ Google Satélite", layer: layer_GoogleSatelite_0, checked: false},
+                    ]
+                }
+            ];
+
+            var lay = L.control.layers.tree(null, overlaysTree, {
+                collapsed: true,
+                closedSymbol: '▶',
+                openedSymbol: '▼'
+            }).addTo(map);
+
+            // AGREGAR SOLO LAS CAPAS BASE Y LAS INICIATIVAS ACTIVAS AL MAPA INICIALMENTE
+            map.addLayer(layer_OpenStreetMap_1);
+            
+            // Agregar todas las capas de iniciativas activas al mapa
+            activeIniciativasLayers.forEach(function(layer) {
+                map.addLayer(layer);
+            });
+            // AGREGAR SECTORES ESTADÍSTICOS AL MAPA INICIALMENTE
+            map.addLayer(layer_SECTORESESTADISTICAS_2);
+
+            // =========================================================
+            // === INTERFAZ DE USUARIO MEJORADA ===
+            // =========================================================
+
+            // Botón de leyenda para móviles
+            const legendButton = document.getElementById('legendButton');
+            const legendControl = document.querySelector('.leaflet-control-layers');
+
+            if (legendButton && legendControl) {
+                legendButton.addEventListener('click', function() {
+                    legendControl.classList.toggle('expanded');
+                });
+            }
+
+            // Panel de texto
+            const cerrarTextoBtn = document.getElementById('cerrarTexto');
+            const textoPanel = document.getElementById('texto');
+            
+            if (cerrarTextoBtn && textoPanel) {
+                cerrarTextoBtn.addEventListener('click', () => {
+                    textoPanel.classList.add('hidden');
+                    setTimeout(() => {
+                        textoPanel.style.display = 'none';
+                    }, 500);
+                });
+            }
+
+            // Panel de filtro
+            const filterPanel = document.getElementById('filterPanel');
+            const filterHeader = document.getElementById('filterHeader');
+            const toggleFilterBtn = document.getElementById('toggleFilter');
+
+            if (filterHeader && filterPanel) {
+                filterHeader.addEventListener('click', () => {
+                    filterPanel.classList.toggle('collapsed');
+                    filterPanel.classList.toggle('expanded');
+                    toggleFilterBtn.textContent = filterPanel.classList.contains('expanded') ? '▲' : '▼';
+                });
+            }
+
+            // Filtro de estado
+            var div_ESTADO = document.getElementById('div_ESTADO');
+            var sel_ESTADO = document.getElementById('sel_ESTADO');
+            var reset_ESTADO = div_ESTADO.querySelector('.clear-filter');
+
+            sel_ESTADO.onchange = function() {filterFunc()};
+            reset_ESTADO.onclick = function() {
+                var options = sel_ESTADO.options;
+                for (var i=0; i < options.length; i++) {
+                    options[i].selected = false;
+                }
+                filterFunc();
+            };
+
+            // Asegurar que el mapa se redibuje correctamente
+            map.invalidateSize();
+        }
+
+        // =========================================================
+        // === FUNCIÓN DE FILTRADO SIMPLIFICADA Y FUNCIONAL ===
+        // =========================================================
+        function filterFunc() {
+            if (!map || !activeIniciativasLayers.length) return;
+            
+            // Obtener los estados seleccionados
+            var selectedStates = [];
+            var options = document.getElementById("sel_ESTADO").options;
+            for (var i = 0; i < options.length; i++) {
+                if (options[i].selected) {
+                    selectedStates.push(options[i].value);
+                }
+            }
+            
+            console.log("Estados seleccionados:", selectedStates); // Para debug
+            
+            // Para cada capa de iniciativas, mostrar u ocultar según el filtro
+            activeIniciativasLayers.forEach(function(layer) {
+                // Obtener el estado de esta capa (del primer feature)
+                var layerFeatures = layer.getLayers();
+                if (layerFeatures.length > 0) {
+                    var layerEstado = layerFeatures[0].feature.properties.ESTADO;
+                    
+                    // Si hay estados seleccionados y este estado no está entre ellos, ocultar la capa
+                    if (selectedStates.length > 0 && selectedStates.indexOf(layerEstado) === -1) {
+                        if (map.hasLayer(layer)) {
+                            map.removeLayer(layer);
+                        }
+                    } else {
+                        // Si no hay estados seleccionados o este estado está seleccionado, mostrar la capa
+                        if (!map.hasLayer(layer)) {
+                            map.addLayer(layer);
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
