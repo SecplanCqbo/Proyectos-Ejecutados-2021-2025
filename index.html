@@ -141,6 +141,20 @@
             border-bottom: 1px solid #eee;
         }
 
+        /* --- MEJORA DE VISUALIZACIÓN OP. 2A (BORDE DE ÍCONOS) --- */
+        .leaflet-marker-icon {
+            /* Añadir un borde blanco (2px) y una sombra sutil (1px) */
+            box-shadow: 0 0 0 2px white, 0 0 0 3px rgba(0,0,0,0.3); 
+            border-radius: 2px; 
+        }
+
+        /* Excluir el ícono de la leyenda para que no tenga el borde */
+        .leaflet-control-layers img {
+            box-shadow: none !important;
+        }
+        /* --- FIN MEJORA VISUALIZACIÓN --- */
+
+
         /* --- ESTILOS PARA LA VENTANA MODAL (DISCLAIMER) --- */
         #disclaimerModal {
             position: fixed;
@@ -272,7 +286,7 @@
                 Ilustre Municipalidad de Coquimbo<br><br>
             </strong>
         </div>
-        </div>
+    </div>
     
     <script src="js/qgis2web_expressions.js"></script>
     <script src="js/leaflet.js"></script>
@@ -339,10 +353,8 @@
             var rows = tempDiv.querySelectorAll('tr');
             for (var i = 0; i < rows.length; i++) {
                 var th = rows[i].querySelector('th');
-                // Extrae la clave de la columna (ej: "INICIATIVA" de <th>INICIATIVA</th>)
                 var key = th ? th.innerText.trim() : ''; 
                 
-                // Si la tabla del popup tiene datos (td) y si el valor de la propiedad es nulo o vacío, lo ocultamos.
                 if (key in feature.properties && (feature.properties[key] == null || feature.properties[key] === '')) {
                     rows[i].parentNode.removeChild(rows[i]);
                 }
@@ -352,7 +364,6 @@
         
         function pop_Proyecto(feature, layer) {
             var p = feature.properties;
-            // Usamos las claves exactas de las propiedades
             var popupContent = '<table class="popup-table">\
             <tr><th scope="row">INICIATIVA</th><td>' + (p.INICIATIVA !== null ? autolinker.link(String(p.INICIATIVA)) : '') + '</td></tr>\
             <tr><th scope="row">FINANCIAMI</th><td>' + (p.FINANCIAMI !== null ? autolinker.link(String(p.FINANCIAMI)) : '') + '</td></tr>\
@@ -459,19 +470,19 @@
             
             // Capas por Año (Círculos) 
             var layer_PROYECTOS2021_10 = new L.geoJson(json_PROYECTOS2021_10, { pane: 'pane_PROYECTOS2021_10', onEachFeature: pop_Proyecto, pointToLayer: function (feature, latlng) { return L.circleMarker(latlng, style_PROYECTOS2021_10_0(feature)); } });
-            map.createPane('pane_PROYECTOS2021_10'); map.getPane('pane_PROYECTOS2021_10').style.zIndex = 410; bounds_group.addLayer(layer_PROYECTOS2021_10);
+            map.createPane('pane_PROYECTOS2021_10'); map.getPane('pane_PROYECTOS2021_10').style.zIndex = 410; bounds_group.addLayer(layer_PROYECTOS2021_10); map.addLayer(layer_PROYECTOS2021_10);
 
             var layer_PROYECTOS2022_11 = new L.geoJson(json_PROYECTOS2022_11, { pane: 'pane_PROYECTOS2022_11', onEachFeature: pop_Proyecto, pointToLayer: function (feature, latlng) { return L.circleMarker(latlng, style_PROYECTOS2022_11_0(feature)); } });
-            map.createPane('pane_PROYECTOS2022_11'); map.getPane('pane_PROYECTOS2022_11').style.zIndex = 411; bounds_group.addLayer(layer_PROYECTOS2022_11);
+            map.createPane('pane_PROYECTOS2022_11'); map.getPane('pane_PROYECTOS2022_11').style.zIndex = 411; bounds_group.addLayer(layer_PROYECTOS2022_11); map.addLayer(layer_PROYECTOS2022_11);
 
             var layer_PROYECTOS2023_12 = new L.geoJson(json_PROYECTOS2023_12, { pane: 'pane_PROYECTOS2023_12', onEachFeature: pop_Proyecto, pointToLayer: function (feature, latlng) { return L.circleMarker(latlng, style_PROYECTOS2023_12_0(feature)); } });
-            map.createPane('pane_PROYECTOS2023_12'); map.getPane('pane_PROYECTOS2023_12').style.zIndex = 412; bounds_group.addLayer(layer_PROYECTOS2023_12);
+            map.createPane('pane_PROYECTOS2023_12'); map.getPane('pane_PROYECTOS2023_12').style.zIndex = 412; bounds_group.addLayer(layer_PROYECTOS2023_12); map.addLayer(layer_PROYECTOS2023_12);
 
             var layer_PROYECTOS2024_13 = new L.geoJson(json_PROYECTOS2024_13, { pane: 'pane_PROYECTOS2024_13', onEachFeature: pop_Proyecto, pointToLayer: function (feature, latlng) { return L.circleMarker(latlng, style_PROYECTOS2024_13_0(feature)); } });
-            map.createPane('pane_PROYECTOS2024_13'); map.getPane('pane_PROYECTOS2024_13').style.zIndex = 413; bounds_group.addLayer(layer_PROYECTOS2024_13);
+            map.createPane('pane_PROYECTOS2024_13'); map.getPane('pane_PROYECTOS2024_13').style.zIndex = 413; bounds_group.addLayer(layer_PROYECTOS2024_13); map.addLayer(layer_PROYECTOS2024_13);
 
             var layer_PROYECTOS2025_14 = new L.geoJson(json_PROYECTOS2025_14, { pane: 'pane_PROYECTOS2025_14', onEachFeature: pop_Proyecto, pointToLayer: function (feature, latlng) { return L.circleMarker(latlng, style_PROYECTOS2025_14_0(feature)); } });
-            map.createPane('pane_PROYECTOS2025_14'); map.getPane('pane_PROYECTOS2025_14').style.zIndex = 414; bounds_group.addLayer(layer_PROYECTOS2025_14);
+            map.createPane('pane_PROYECTOS2025_14'); map.getPane('pane_PROYECTOS2025_14').style.zIndex = 414; bounds_group.addLayer(layer_PROYECTOS2025_14); map.addLayer(layer_PROYECTOS2025_14);
 
             // Capa Proyectos Ejecutados (Inicialmente activada)
             var layer_ProyectosEjecutados20212025_15 = new L.geoJson(json_ProyectosEjecutados20212025_15, { pane: 'pane_ProyectosEjecutados20212025_15', onEachFeature: pop_Proyecto, pointToLayer: function (feature, latlng) { return L.circleMarker(latlng, style_ProyectosEjecutados20212025_15_0(feature)); } });
